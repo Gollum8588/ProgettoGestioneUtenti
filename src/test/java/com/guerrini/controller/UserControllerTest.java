@@ -1,33 +1,29 @@
-package org.example.controller;
+package com.guerrini.controller;
 
-import org.example.dto.CreateUserRequest;
-import org.example.dto.UpdateUserRequest;
-import org.example.exception.UserNotFoundException;
-import org.example.model.RolesType;
-import org.example.model.User;
-import org.example.service.UserService;
+import com.guerrini.dto.CreateUserRequest;
+import com.guerrini.dto.UpdateUserRequest;
+import com.guerrini.exception.UserNotFoundException;
+import com.guerrini.model.RolesType;
+import com.guerrini.model.RolesTypeEntity;
+import com.guerrini.model.User;
+import com.guerrini.repository.RolesTypeRepository;
+import com.guerrini.repository.UserRepository;
+import com.guerrini.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.doNothing;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class UserControllerTest {
 
-    @Mock
+    private UserRepository userRepository;
+    private RolesTypeRepository rolesTypeRepository;
     private UserService userService;
-
     private UserController controller;
 
     private CreateUserRequest sampleCreateUserRequest;
@@ -37,6 +33,9 @@ class UserControllerTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
+        userRepository = mock(UserRepository.class);
+        rolesTypeRepository = mock(RolesTypeRepository.class);
+        userService = new UserService(userRepository, rolesTypeRepository);
         controller = new UserController(userService);
 
         sampleCreateUserRequest = new CreateUserRequest();
@@ -61,7 +60,7 @@ class UserControllerTest {
     void testListAllUsers() {
         List<User> users = new ArrayList<>();
         users.add(mockUser);
-        when(userService.listAll()).thenReturn(users);
+        when(userRepository.findAll()).thenReturn(users);
 
         List<User> result = controller.listAll();
 
@@ -73,7 +72,7 @@ class UserControllerTest {
 
     @Test
     void testGetUserById() {
-        when(userService.getById(userId)).thenReturn(mockUser);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
 
         User result = controller.getById(userId);
 
@@ -102,13 +101,14 @@ class UserControllerTest {
         createdUser.setFirstName("New");
         createdUser.setLastName("User");
 
-        when(userService.create(any(CreateUserRequest.class))).thenReturn(createdUser);
-
-        // Prepare a mock servlet request so ServletUriComponentsBuilder can build the Location header
-        MockHttpServletRequest servletRequest = new MockHttpServletRequest();
-        servletRequest.setMethod("POST");
-        servletRequest.setRequestURI("/api/users");
-        RequestContextHolder.setRequestAttributes(new ServletRequestAttributes(servletRequest));
+        when(userRepository.existsByEmail(request.getEmail())).thenReturn(false);
+        when(rolesTypeRepository.findByNameIn(anyCollection())).thenReturn(Collections.emptyList());
+        when(rolesTypeRepository.save(any(RolesTypeEntity.class))).thenAnswer(invocation -> {
+            RolesTypeEntity r = invocation.getArgument(0);
+            r.setId(new Random().nextLong() & Long.MAX_VALUE);
+            return r;
+        });
+        when(userRepository.save(any(User.class))).thenReturn(createdUser);
 
         var response = controller.create(request);
 
@@ -117,9 +117,6 @@ class UserControllerTest {
         assertNotNull(response.getBody());
         assertEquals("newuser", response.getBody().getUsername());
         assertEquals("newuser@example.com", response.getBody().getEmail());
-
-        // Clear the request attributes after the test to avoid side-effects
-        RequestContextHolder.resetRequestAttributes();
     }
 
     @Test
@@ -139,7 +136,14 @@ class UserControllerTest {
         updatedUser.setFirstName("Updated");
         updatedUser.setLastName("Name");
 
-        when(userService.update(eq(userId), any(UpdateUserRequest.class))).thenReturn(updatedUser);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser));
+        when(rolesTypeRepository.findByNameIn(anyCollection())).thenReturn(Collections.emptyList());
+        when(rolesTypeRepository.save(any(RolesTypeEntity.class))).thenAnswer(invocation -> {
+            RolesTypeEntity r = invocation.getArgument(0);
+            r.setId(new Random().nextLong() & Long.MAX_VALUE);
+            return r;
+        });
+        when(userRepository.save(any(User.class))).thenReturn(updatedUser);
 
         User result = controller.update(userId, updateRequest);
 
@@ -153,13 +157,12 @@ class UserControllerTest {
 
     @Test
     void testDeleteUser() {
-        doNothing().when(userService).delete(userId);
+        when(userRepository.findById(userId)).thenReturn(Optional.of(mockUser)).thenReturn(Optional.empty());
+        doNothing().when(userRepository).delete(any(User.class));
 
         var response = controller.delete(userId);
         assertNotNull(response);
         assertEquals(204, response.getStatusCodeValue());
-
-        when(userService.getById(userId)).thenThrow(new UserNotFoundException("User not found with id " + userId));
 
         assertThrows(UserNotFoundException.class, () -> controller.getById(userId));
     }

@@ -1,17 +1,15 @@
-package org.example.controller;
+package com.guerrini.controller;
 
 import jakarta.validation.Valid;
-import org.example.dto.CreateUserRequest;
-import org.example.dto.UpdateUserRequest;
-import org.example.model.User;
-import org.example.service.UserService;
+import com.guerrini.dto.CreateUserRequest;
+import com.guerrini.dto.UpdateUserRequest;
+import com.guerrini.model.User;
+import com.guerrini.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/users")
@@ -36,7 +34,7 @@ public class UserController {
     @PostMapping
     public ResponseEntity<User> create(@Valid @RequestBody CreateUserRequest req) {
         User created = service.create(req);
-        URI location = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}").buildAndExpand(created.getId()).toUri();
+        URI location = URI.create("/api/users/" + created.getId());
         return ResponseEntity.created(location).body(created);
     }
 

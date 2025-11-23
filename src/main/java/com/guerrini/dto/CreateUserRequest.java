@@ -1,15 +1,20 @@
-package org.example.dto;
+package com.guerrini.dto;
 
+import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
-import org.example.model.RolesType;
+import com.guerrini.model.RolesType;
 
 import java.util.Set;
 
-public class UpdateUserRequest {
+public class CreateUserRequest {
 
     @NotBlank
     private String username;
+
+    @Email
+    @NotBlank
+    private String email;
 
     private String codiceFiscale;
     private String nome;
@@ -24,6 +29,14 @@ public class UpdateUserRequest {
 
     public void setUsername(String username) {
         this.username = username;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public String getCodiceFiscale() {

@@ -1,10 +1,9 @@
-package org.example.repository;
+package com.guerrini.repository;
 
-import org.example.model.User;
+import com.guerrini.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.Optional;
-import java.util.UUID;
 
 public interface UserRepository extends JpaRepository<User, Long> {
     Optional<User> findByEmail(String email);

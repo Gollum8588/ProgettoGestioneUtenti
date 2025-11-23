@@ -1,8 +1,10 @@
-package org.example.model;
+package com.guerrini.model;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+
+import java.util.Set;
 
 @Entity
 @Table(name = "users", uniqueConstraints = {@UniqueConstraint(columnNames = "email")})
@@ -24,11 +26,12 @@ public class User {
     private String firstName;
     private String lastName;
 
-//    @ElementCollection(fetch = FetchType.EAGER)
-//    @Enumerated(EnumType.STRING)
-//    @CollectionTable(name = "user_roles", joinColumns = @JoinColumn(name = "user_id"))
-//    @Column(name = "role")
-//    private Set<RolesType> roles;
+    @ManyToMany(fetch = FetchType.EAGER, cascade = {CascadeType.PERSIST, CascadeType.MERGE})
+    @JoinTable(name = "user_roles",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "role_id"),
+            uniqueConstraints = @UniqueConstraint(columnNames = {"user_id", "role_id"}))
+    private Set<RolesTypeEntity> roles;
 
     public User() {
     }
@@ -83,12 +86,11 @@ public class User {
         this.lastName = cognome;
     }
 
-//    public Set<RolesType> getRoles() {
-//        return roles;
-//    }
-//
-//    public void setRoles(Set<RolesType> roles) {
-//        this.roles = roles;
-//    }
-}
+    public Set<RolesTypeEntity> getRoles() {
+        return roles;
+    }
 
+    public void setRoles(Set<RolesTypeEntity> roles) {
+        this.roles = roles;
+    }
+}
