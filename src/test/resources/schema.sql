@@ -1,0 +1,48 @@
+-- Create USERS table
+CREATE TABLE users (
+    id UUID PRIMARY KEY,
+    username VARCHAR(255) NOT NULL,
+    email VARCHAR(255) NOT NULL UNIQUE,
+    codice_fiscale VARCHAR(16),
+    nome VARCHAR(255),
+    cognome VARCHAR(255)
+);
+
+-- Create USER_ROLES table
+CREATE TABLE user_roles (
+    user_id UUID NOT NULL,
+    role VARCHAR(50) NOT NULL,
+    PRIMARY KEY (user_id, role),
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Create Liquibase tracking tables
+CREATE TABLE databasechangelog (
+    ID VARCHAR(255) NOT NULL,
+    AUTHOR VARCHAR(255) NOT NULL,
+    FILENAME VARCHAR(255) NOT NULL,
+    DATEEXECUTED TIMESTAMP NOT NULL,
+    ORDEREXECUTED INTEGER NOT NULL,
+    EXECTYPE VARCHAR(10) NOT NULL,
+    MD5SUM VARCHAR(35),
+    DESCRIPTION VARCHAR(255),
+    COMMENTS VARCHAR(255),
+    TAG VARCHAR(255),
+    LIQUIBASE VARCHAR(20),
+    CONTEXTS VARCHAR(255),
+    LABELS VARCHAR(255),
+    DEPLOYMENT_ID VARCHAR(255),
+    PRIMARY KEY (ID, AUTHOR, FILENAME)
+);
+
+CREATE TABLE databasechangeloglock (
+    ID INTEGER NOT NULL,
+    LOCKED BOOLEAN NOT NULL,
+    LOCKGRANT TIMESTAMP,
+    LOCKEDBY VARCHAR(255),
+    PRIMARY KEY (ID)
+);
+
+-- Initialize the lock table
+INSERT INTO databasechangeloglock (ID, LOCKED) VALUES (1, FALSE);
+
